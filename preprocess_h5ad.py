@@ -2,7 +2,9 @@
 import scanpy as sc
 import argparse
 import anndata as ad
-
+import numpy as np
+from scipy import sparse
+import pandas as pd
 parser = argparse.ArgumentParser(
     description="""
         Convert H5AD to Seurat
@@ -36,12 +38,50 @@ parser.add_argument(
 options = parser.parse_args()
 outname = options.outname 
 h5 = options.h5
+print(f'Converting {h5}')
 adata3 = sc.read_h5ad(filename=h5)
+            
+try:
+    if adata3.raw.shape != adata3.X.shape:
+        del adata3.raw
+    else:
+        _='same dims'
+except:
+    _='no layers'
+        
+# del adata3.raw
+# adata3 = adata3[:50, :]
+# del adata3.raw
+# Loop through all keys in the uns layer of adata3
+for key in list(adata3.uns.keys()):
+    try:
+        # Check if the uns[key] is a scalar or array-like object that applies to all cells
+        if isinstance(adata3.uns[key], (str, int, float)):
+            # If it's a single value, broadcast it to all cells in obs
+            adata3.obs[key] = adata3.uns[key]
+        
+        elif len(adata3.uns[key]) == adata3.n_obs:
+            # If it's a list or array with the same length as the number of cells, add to obs
+            adata3.obs[key] = adata3.uns[key]
+        
+        elif len(adata3.uns[key]) == adata3.n_vars:
+            # If it's a list or array with the same length as the number of variables (genes), add to var
+            adata3.var[key] = adata3.uns[key]
+        
+        else:
+            # Handle or skip the case where the data is not compatible (e.g., unstructured data)
+            print(f"Skipping {key}: incompatible size or structure.")
+    
+    except Exception as e:
+        print(f"Error processing key {key}: {e}")
+    
+    # Remove the key from uns once it's been processed
+    del adata3.uns[key]
 
-del adata3.raw
-del adata3.uns
-del adata3.varm
-del adata3.obsp
+# del adata3.varm
+# del adata3.obsp
+adata3.X = sparse.csr_matrix(adata3.X)
+adata3.X = adata3.X.astype(np.float32)
 
 for c1 in adata3.obs.columns:
     try:
@@ -50,6 +90,9 @@ for c1 in adata3.obs.columns:
         _=''
 
 adata3.write(
-    f'tmp__{outname}.h5ad',
-    compression='gzip'
+    f'tmp__{outname}.h5ad'
 )
+
+# subset_adata.write(
+#     f'/lustre/scratch127/humgen/teams/hgi/mo11/tmp_projects127/random_work/anja/tmp.h5ad'
+# )

@@ -1,0 +1,4 @@
+##### h5ad_to_seurat 0.1 #####
+
+    ${bold}h5ad_to_seurat -v${normal} : Displays the current version of h5ad_to_seurat in use.
+    ${bold}h5ad_to_seurat /path/to/h5ad/file${normal} : Converts the specified .h5ad file into a Seurat object, saving it with the same name and a .h5seurat extension in the directory from which you run the command.

@@ -1,15 +1,23 @@
 #/bin/bash
 input=$1
-cmd="$(basename "$input")";
-outname=${cmd/'.h5ad'/"$secondString"}
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Preprocess - seurat doesnt like andata.raw
 # singularity exec -B /lustre -B /software /software/hgi/containers/yascp/yascp.cog.sanger.ac.uk-public-singularity_images-azimuth_dsb.img.img /software/hgi/containers/yascp/modules/h5ad_to_seurat/h5ad_to_seurat.R $input $outname
 
 # if [ -f 'tmp__success' ]; then
 #    rm tmp__success
 # else
-singularity exec -B /software -B /lustre /software/hgi/containers/yascp/yascp.cog.sanger.ac.uk-public-singularity_images-wtsihgi_nf_scrna_qc_6bb6af5-2021-12-23-3270149cf265.sif /software/hgi/containers/yascp/modules/h5ad_to_seurat/preprocess_h5ad.py --outname $outname --h5_anndata $input
-singularity exec -B /lustre -B /software /software/hgi/containers/yascp/yascp.cog.sanger.ac.uk-public-singularity_images-azimuth_dsb.img.img /software/hgi/containers/yascp/modules/h5ad_to_seurat/h5ad_to_seurat.R tmp__$outname.h5ad $outname
-rm tmp__$outname.h5ad
-rm tmp__success
-# fi
+
+if [[ $1 == "-v" ]]; then
+    command echo  -e "v0.1"
+elif [[ $1 == "-h" ]]; then
+    command cat "${SCRIPT_DIR}/help.info" | sed "s/\${bold}/$(echo -e "\033[1m")/g; s/\${normal}/$(echo -e "\033[0m")/g"
+else
+    cmd="$(basename "$input")";
+    outname=${cmd/'.h5ad'/"$secondString"}
+    singularity exec -B /software -B /lustre /software/hgi/containers/yascp/yascp.cog.sanger.ac.uk-public-singularity_images-wtsihgi_nf_scrna_qc_6bb6af5-2021-12-23-3270149cf265.sif /software/hgi/containers/yascp/modules/h5ad_to_seurat/preprocess_h5ad.py --outname $outname --h5_anndata $input
+    singularity exec -B /lustre -B /software /software/hgi/containers/yascp/yascp.cog.sanger.ac.uk-public-singularity_images-azimuth_dsb.img.img /software/hgi/containers/yascp/modules/h5ad_to_seurat/h5ad_to_seurat.R tmp__$outname.h5ad $outname
+    rm tmp__$outname.h5ad
+    rm tmp__success
+fi
